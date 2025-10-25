@@ -1,0 +1,959 @@
+{
+  "focus": {
+    "kind": "Pod",
+    "namespace": "demo",
+    "name": "nginx-858ddf8b75-sfvd7"
+  },
+  "owners": [
+    {
+      "kind": "Pod",
+      "ns": "demo",
+      "name": "nginx-858ddf8b75-sfvd7"
+    },
+    {
+      "kind": "ReplicaSet",
+      "ns": "demo",
+      "name": "nginx-858ddf8b75"
+    }
+  ],
+  "rbac": {
+    "serviceAccount": {
+      "api_version": "v1",
+      "automount_service_account_token": null,
+      "image_pull_secrets": null,
+      "kind": "ServiceAccount",
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"ServiceAccount\",\"metadata\":{\"annotations\":{},\"creationTimestamp\":null,\"name\":\"over-sa\",\"namespace\":\"demo\"}}\n"
+        },
+        "creation_timestamp": "2025-10-24T04:07:35+00:00",
+        "deletion_grace_period_seconds": null,
+        "deletion_timestamp": null,
+        "finalizers": null,
+        "generate_name": null,
+        "generation": null,
+        "labels": null,
+        "managed_fields": [
+          {
+            "api_version": "v1",
+            "fields_type": "FieldsV1",
+            "fields_v1": {
+              "f:metadata": {
+                "f:annotations": {
+                  ".": {},
+                  "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                }
+              }
+            },
+            "manager": "kubectl-client-side-apply",
+            "operation": "Update",
+            "subresource": null,
+            "time": "2025-10-24T04:07:35+00:00"
+          }
+        ],
+        "name": "over-sa",
+        "namespace": "demo",
+        "owner_references": null,
+        "resource_version": "9781",
+        "self_link": null,
+        "uid": "d7e36ee7-59a7-48cc-99f5-295807249c2a"
+      },
+      "secrets": null
+    },
+    "roleBindings": [],
+    "roles": [],
+    "clusterRoleBindings": [
+      {
+        "api_version": null,
+        "kind": null,
+        "metadata": {
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"ClusterRoleBinding\",\"metadata\":{\"annotations\":{},\"name\":\"over-perm-binding\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"ClusterRole\",\"name\":\"over-perm\"},\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"over-sa\",\"namespace\":\"demo\"}]}\n"
+          },
+          "creation_timestamp": "2025-10-24T04:07:36+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": null,
+          "generation": null,
+          "labels": null,
+          "managed_fields": [
+            {
+              "api_version": "rbac.authorization.k8s.io/v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:annotations": {
+                    ".": {},
+                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                  }
+                },
+                "f:roleRef": {},
+                "f:subjects": {}
+              },
+              "manager": "kubectl-client-side-apply",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-10-24T04:07:36+00:00"
+            }
+          ],
+          "name": "over-perm-binding",
+          "namespace": null,
+          "owner_references": null,
+          "resource_version": "9783",
+          "self_link": null,
+          "uid": "cb9e1458-9a55-4566-bf23-f97d4db008e6"
+        },
+        "role_ref": {
+          "api_group": "rbac.authorization.k8s.io",
+          "kind": "ClusterRole",
+          "name": "over-perm"
+        },
+        "subjects": [
+          {
+            "api_group": null,
+            "kind": "ServiceAccount",
+            "name": "over-sa",
+            "namespace": "demo"
+          }
+        ]
+      },
+      {
+        "api_version": null,
+        "kind": null,
+        "metadata": {
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"ClusterRoleBinding\",\"metadata\":{\"annotations\":{},\"name\":\"over-perm-binding-demo\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"ClusterRole\",\"name\":\"over-perm\"},\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"over-sa\",\"namespace\":\"demo\"}]}\n"
+          },
+          "creation_timestamp": "2025-10-24T20:13:02+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": null,
+          "generation": null,
+          "labels": null,
+          "managed_fields": [
+            {
+              "api_version": "rbac.authorization.k8s.io/v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:annotations": {
+                    ".": {},
+                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                  }
+                },
+                "f:roleRef": {},
+                "f:subjects": {}
+              },
+              "manager": "kubectl-client-side-apply",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-10-24T20:13:02+00:00"
+            }
+          ],
+          "name": "over-perm-binding-demo",
+          "namespace": null,
+          "owner_references": null,
+          "resource_version": "26821",
+          "self_link": null,
+          "uid": "d699dfc5-f0ce-4f8a-866c-c1df710fd4eb"
+        },
+        "role_ref": {
+          "api_group": "rbac.authorization.k8s.io",
+          "kind": "ClusterRole",
+          "name": "over-perm"
+        },
+        "subjects": [
+          {
+            "api_group": null,
+            "kind": "ServiceAccount",
+            "name": "over-sa",
+            "namespace": "demo"
+          }
+        ]
+      }
+    ],
+    "clusterRoles": [
+      {
+        "aggregation_rule": null,
+        "api_version": "rbac.authorization.k8s.io/v1",
+        "kind": "ClusterRole",
+        "metadata": {
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"ClusterRole\",\"metadata\":{\"annotations\":{},\"name\":\"over-perm\"},\"rules\":[{\"apiGroups\":[\"\"],\"resources\":[\"pods\"],\"verbs\":[\"get\",\"list\",\"watch\"]}]}\n"
+          },
+          "creation_timestamp": "2025-10-24T04:07:36+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": null,
+          "generation": null,
+          "labels": null,
+          "managed_fields": [
+            {
+              "api_version": "rbac.authorization.k8s.io/v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:annotations": {
+                    ".": {},
+                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                  }
+                },
+                "f:rules": {}
+              },
+              "manager": "kubectl-client-side-apply",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-10-24T20:32:03+00:00"
+            }
+          ],
+          "name": "over-perm",
+          "namespace": null,
+          "owner_references": null,
+          "resource_version": "28337",
+          "self_link": null,
+          "uid": "5c182094-fb82-468b-8b10-e9c6268be46a"
+        },
+        "rules": [
+          {
+            "api_groups": [
+              ""
+            ],
+            "non_resource_ur_ls": null,
+            "resource_names": null,
+            "resources": [
+              "pods"
+            ],
+            "verbs": [
+              "get",
+              "list",
+              "watch"
+            ]
+          }
+        ]
+      },
+      {
+        "aggregation_rule": null,
+        "api_version": "rbac.authorization.k8s.io/v1",
+        "kind": "ClusterRole",
+        "metadata": {
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"ClusterRole\",\"metadata\":{\"annotations\":{},\"name\":\"over-perm\"},\"rules\":[{\"apiGroups\":[\"\"],\"resources\":[\"pods\"],\"verbs\":[\"get\",\"list\",\"watch\"]}]}\n"
+          },
+          "creation_timestamp": "2025-10-24T04:07:36+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": null,
+          "generation": null,
+          "labels": null,
+          "managed_fields": [
+            {
+              "api_version": "rbac.authorization.k8s.io/v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:annotations": {
+                    ".": {},
+                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                  }
+                },
+                "f:rules": {}
+              },
+              "manager": "kubectl-client-side-apply",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-10-24T20:32:03+00:00"
+            }
+          ],
+          "name": "over-perm",
+          "namespace": null,
+          "owner_references": null,
+          "resource_version": "28337",
+          "self_link": null,
+          "uid": "5c182094-fb82-468b-8b10-e9c6268be46a"
+        },
+        "rules": [
+          {
+            "api_groups": [
+              ""
+            ],
+            "non_resource_ur_ls": null,
+            "resource_names": null,
+            "resources": [
+              "pods"
+            ],
+            "verbs": [
+              "get",
+              "list",
+              "watch"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "network": {
+    "services": [
+      {
+        "api_version": null,
+        "kind": null,
+        "metadata": {
+          "annotations": null,
+          "creation_timestamp": "2025-10-24T20:54:19+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": null,
+          "generation": null,
+          "labels": null,
+          "managed_fields": [
+            {
+              "api_version": "v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:spec": {
+                  "f:internalTrafficPolicy": {},
+                  "f:ports": {
+                    ".": {},
+                    "k:{\"port\":80,\"protocol\":\"TCP\"}": {
+                      ".": {},
+                      "f:port": {},
+                      "f:protocol": {},
+                      "f:targetPort": {}
+                    }
+                  },
+                  "f:selector": {},
+                  "f:sessionAffinity": {},
+                  "f:type": {}
+                }
+              },
+              "manager": "kubectl-expose",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-10-24T20:54:19+00:00"
+            }
+          ],
+          "name": "nginx",
+          "namespace": "demo",
+          "owner_references": null,
+          "resource_version": "30074",
+          "self_link": null,
+          "uid": "d360a99d-feb6-4f4b-8b9b-b60363ab9f84"
+        },
+        "spec": {
+          "allocate_load_balancer_node_ports": null,
+          "cluster_ip": "10.96.180.145",
+          "cluster_i_ps": [
+            "10.96.180.145"
+          ],
+          "external_i_ps": null,
+          "external_name": null,
+          "external_traffic_policy": null,
+          "health_check_node_port": null,
+          "internal_traffic_policy": "Cluster",
+          "ip_families": [
+            "IPv4"
+          ],
+          "ip_family_policy": "SingleStack",
+          "load_balancer_class": null,
+          "load_balancer_ip": null,
+          "load_balancer_source_ranges": null,
+          "ports": [
+            {
+              "app_protocol": null,
+              "name": null,
+              "node_port": null,
+              "port": 80,
+              "protocol": "TCP",
+              "target_port": 80
+            }
+          ],
+          "publish_not_ready_addresses": null,
+          "selector": {
+            "app": "nginx"
+          },
+          "session_affinity": "None",
+          "session_affinity_config": null,
+          "traffic_distribution": null,
+          "type": "ClusterIP"
+        },
+        "status": {
+          "conditions": null,
+          "load_balancer": {
+            "ingress": null
+          }
+        }
+      }
+    ],
+    "endpoints": [
+      {
+        "api_version": "v1",
+        "kind": "Endpoints",
+        "metadata": {
+          "annotations": {
+            "endpoints.kubernetes.io/last-change-trigger-time": "2025-10-24T20:54:19Z"
+          },
+          "creation_timestamp": "2025-10-24T20:54:19+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": null,
+          "generation": null,
+          "labels": null,
+          "managed_fields": [
+            {
+              "api_version": "v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:annotations": {
+                    ".": {},
+                    "f:endpoints.kubernetes.io/last-change-trigger-time": {}
+                  }
+                },
+                "f:subsets": {}
+              },
+              "manager": "kube-controller-manager",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-10-24T20:54:19+00:00"
+            }
+          ],
+          "name": "nginx",
+          "namespace": "demo",
+          "owner_references": null,
+          "resource_version": "30075",
+          "self_link": null,
+          "uid": "d725bb5c-19d0-41a8-bc75-e370a6481661"
+        },
+        "subsets": [
+          {
+            "addresses": [
+              {
+                "hostname": null,
+                "ip": "10.244.0.134",
+                "node_name": "kubefix-control-plane",
+                "target_ref": {
+                  "api_version": null,
+                  "field_path": null,
+                  "kind": "Pod",
+                  "name": "nginx-858ddf8b75-sfvd7",
+                  "namespace": "demo",
+                  "resource_version": null,
+                  "uid": "e4cd09f5-9ec6-4f47-a5ed-a030adf51d52"
+                }
+              }
+            ],
+            "not_ready_addresses": null,
+            "ports": [
+              {
+                "app_protocol": null,
+                "name": null,
+                "port": 80,
+                "protocol": "TCP"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "networkPolicies": []
+  },
+  "specs": {
+    "pods": [
+      {
+        "api_version": "v1",
+        "kind": "Pod",
+        "metadata": {
+          "annotations": null,
+          "creation_timestamp": "2025-10-24T20:12:10+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": "nginx-858ddf8b75-",
+          "generation": null,
+          "labels": {
+            "app": "nginx",
+            "pod-template-hash": "858ddf8b75"
+          },
+          "managed_fields": [
+            {
+              "api_version": "v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:generateName": {},
+                  "f:labels": {
+                    ".": {},
+                    "f:app": {},
+                    "f:pod-template-hash": {}
+                  },
+                  "f:ownerReferences": {
+                    ".": {},
+                    "k:{\"uid\":\"3c150b62-8201-4fbb-8349-2bac333d602a\"}": {}
+                  }
+                },
+                "f:spec": {
+                  "f:containers": {
+                    "k:{\"name\":\"nginx\"}": {
+                      ".": {},
+                      "f:image": {},
+                      "f:imagePullPolicy": {},
+                      "f:name": {},
+                      "f:ports": {
+                        ".": {},
+                        "k:{\"containerPort\":80,\"protocol\":\"TCP\"}": {
+                          ".": {},
+                          "f:containerPort": {},
+                          "f:protocol": {}
+                        }
+                      },
+                      "f:resources": {},
+                      "f:securityContext": {
+                        ".": {},
+                        "f:allowPrivilegeEscalation": {},
+                        "f:capabilities": {
+                          ".": {},
+                          "f:add": {}
+                        },
+                        "f:readOnlyRootFilesystem": {},
+                        "f:runAsGroup": {},
+                        "f:runAsUser": {}
+                      },
+                      "f:terminationMessagePath": {},
+                      "f:terminationMessagePolicy": {}
+                    }
+                  },
+                  "f:dnsPolicy": {},
+                  "f:enableServiceLinks": {},
+                  "f:restartPolicy": {},
+                  "f:schedulerName": {},
+                  "f:securityContext": {},
+                  "f:serviceAccount": {},
+                  "f:serviceAccountName": {},
+                  "f:terminationGracePeriodSeconds": {}
+                }
+              },
+              "manager": "kube-controller-manager",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-10-24T20:12:10+00:00"
+            },
+            {
+              "api_version": "v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:status": {
+                  "f:conditions": {
+                    "k:{\"type\":\"ContainersReady\"}": {
+                      ".": {},
+                      "f:lastProbeTime": {},
+                      "f:lastTransitionTime": {},
+                      "f:status": {},
+                      "f:type": {}
+                    },
+                    "k:{\"type\":\"Initialized\"}": {
+                      ".": {},
+                      "f:lastProbeTime": {},
+                      "f:lastTransitionTime": {},
+                      "f:status": {},
+                      "f:type": {}
+                    },
+                    "k:{\"type\":\"PodReadyToStartContainers\"}": {
+                      ".": {},
+                      "f:lastProbeTime": {},
+                      "f:lastTransitionTime": {},
+                      "f:status": {},
+                      "f:type": {}
+                    },
+                    "k:{\"type\":\"Ready\"}": {
+                      ".": {},
+                      "f:lastProbeTime": {},
+                      "f:lastTransitionTime": {},
+                      "f:status": {},
+                      "f:type": {}
+                    }
+                  },
+                  "f:containerStatuses": {},
+                  "f:hostIP": {},
+                  "f:hostIPs": {},
+                  "f:phase": {},
+                  "f:podIP": {},
+                  "f:podIPs": {
+                    ".": {},
+                    "k:{\"ip\":\"10.244.0.134\"}": {
+                      ".": {},
+                      "f:ip": {}
+                    }
+                  },
+                  "f:startTime": {}
+                }
+              },
+              "manager": "kubelet",
+              "operation": "Update",
+              "subresource": "status",
+              "time": "2025-10-24T20:12:11+00:00"
+            }
+          ],
+          "name": "nginx-858ddf8b75-sfvd7",
+          "namespace": "demo",
+          "owner_references": [
+            {
+              "api_version": "apps/v1",
+              "block_owner_deletion": true,
+              "controller": true,
+              "kind": "ReplicaSet",
+              "name": "nginx-858ddf8b75",
+              "uid": "3c150b62-8201-4fbb-8349-2bac333d602a"
+            }
+          ],
+          "resource_version": "26740",
+          "self_link": null,
+          "uid": "e4cd09f5-9ec6-4f47-a5ed-a030adf51d52"
+        },
+        "spec": {
+          "active_deadline_seconds": null,
+          "affinity": null,
+          "automount_service_account_token": null,
+          "containers": [
+            {
+              "args": null,
+              "command": null,
+              "env": null,
+              "env_from": null,
+              "image": "nginx:1.27",
+              "image_pull_policy": "IfNotPresent",
+              "lifecycle": null,
+              "liveness_probe": null,
+              "name": "nginx",
+              "ports": [
+                {
+                  "container_port": 80,
+                  "host_ip": null,
+                  "host_port": null,
+                  "name": null,
+                  "protocol": "TCP"
+                }
+              ],
+              "readiness_probe": null,
+              "resize_policy": null,
+              "resources": {
+                "claims": null,
+                "limits": null,
+                "requests": null
+              },
+              "restart_policy": null,
+              "restart_policy_rules": null,
+              "security_context": {
+                "allow_privilege_escalation": true,
+                "app_armor_profile": null,
+                "capabilities": {
+                  "add": [
+                    "NET_ADMIN",
+                    "SYS_ADMIN",
+                    "SYS_PTRACE"
+                  ],
+                  "drop": null
+                },
+                "privileged": null,
+                "proc_mount": null,
+                "read_only_root_filesystem": false,
+                "run_as_group": 0,
+                "run_as_non_root": null,
+                "run_as_user": 0,
+                "se_linux_options": null,
+                "seccomp_profile": null,
+                "windows_options": null
+              },
+              "startup_probe": null,
+              "stdin": null,
+              "stdin_once": null,
+              "termination_message_path": "/dev/termination-log",
+              "termination_message_policy": "File",
+              "tty": null,
+              "volume_devices": null,
+              "volume_mounts": [
+                {
+                  "mount_path": "/var/run/secrets/kubernetes.io/serviceaccount",
+                  "mount_propagation": null,
+                  "name": "kube-api-access-d6svl",
+                  "read_only": true,
+                  "recursive_read_only": null,
+                  "sub_path": null,
+                  "sub_path_expr": null
+                }
+              ],
+              "working_dir": null
+            }
+          ],
+          "dns_config": null,
+          "dns_policy": "ClusterFirst",
+          "enable_service_links": true,
+          "ephemeral_containers": null,
+          "host_aliases": null,
+          "host_ipc": null,
+          "host_network": null,
+          "host_pid": null,
+          "host_users": null,
+          "hostname": null,
+          "hostname_override": null,
+          "image_pull_secrets": null,
+          "init_containers": null,
+          "node_name": "kubefix-control-plane",
+          "node_selector": null,
+          "os": null,
+          "overhead": null,
+          "preemption_policy": "PreemptLowerPriority",
+          "priority": 0,
+          "priority_class_name": null,
+          "readiness_gates": null,
+          "resource_claims": null,
+          "resources": null,
+          "restart_policy": "Always",
+          "runtime_class_name": null,
+          "scheduler_name": "default-scheduler",
+          "scheduling_gates": null,
+          "security_context": {
+            "app_armor_profile": null,
+            "fs_group": null,
+            "fs_group_change_policy": null,
+            "run_as_group": null,
+            "run_as_non_root": null,
+            "run_as_user": null,
+            "se_linux_change_policy": null,
+            "se_linux_options": null,
+            "seccomp_profile": null,
+            "supplemental_groups": null,
+            "supplemental_groups_policy": null,
+            "sysctls": null,
+            "windows_options": null
+          },
+          "service_account": "over-sa",
+          "service_account_name": "over-sa",
+          "set_hostname_as_fqdn": null,
+          "share_process_namespace": null,
+          "subdomain": null,
+          "termination_grace_period_seconds": 30,
+          "tolerations": [
+            {
+              "effect": "NoExecute",
+              "key": "node.kubernetes.io/not-ready",
+              "operator": "Exists",
+              "toleration_seconds": 300,
+              "value": null
+            },
+            {
+              "effect": "NoExecute",
+              "key": "node.kubernetes.io/unreachable",
+              "operator": "Exists",
+              "toleration_seconds": 300,
+              "value": null
+            }
+          ],
+          "topology_spread_constraints": null,
+          "volumes": [
+            {
+              "aws_elastic_block_store": null,
+              "azure_disk": null,
+              "azure_file": null,
+              "cephfs": null,
+              "cinder": null,
+              "config_map": null,
+              "csi": null,
+              "downward_api": null,
+              "empty_dir": null,
+              "ephemeral": null,
+              "fc": null,
+              "flex_volume": null,
+              "flocker": null,
+              "gce_persistent_disk": null,
+              "git_repo": null,
+              "glusterfs": null,
+              "host_path": null,
+              "image": null,
+              "iscsi": null,
+              "name": "kube-api-access-d6svl",
+              "nfs": null,
+              "persistent_volume_claim": null,
+              "photon_persistent_disk": null,
+              "portworx_volume": null,
+              "projected": {
+                "default_mode": 420,
+                "sources": [
+                  {
+                    "cluster_trust_bundle": null,
+                    "config_map": null,
+                    "downward_api": null,
+                    "pod_certificate": null,
+                    "secret": null,
+                    "service_account_token": {
+                      "audience": null,
+                      "expiration_seconds": 3607,
+                      "path": "token"
+                    }
+                  },
+                  {
+                    "cluster_trust_bundle": null,
+                    "config_map": {
+                      "items": [
+                        {
+                          "key": "ca.crt",
+                          "mode": null,
+                          "path": "ca.crt"
+                        }
+                      ],
+                      "name": "kube-root-ca.crt",
+                      "optional": null
+                    },
+                    "downward_api": null,
+                    "pod_certificate": null,
+                    "secret": null,
+                    "service_account_token": null
+                  },
+                  {
+                    "cluster_trust_bundle": null,
+                    "config_map": null,
+                    "downward_api": {
+                      "items": [
+                        {
+                          "field_ref": {
+                            "api_version": "v1",
+                            "field_path": "metadata.namespace"
+                          },
+                          "mode": null,
+                          "path": "namespace",
+                          "resource_field_ref": null
+                        }
+                      ]
+                    },
+                    "pod_certificate": null,
+                    "secret": null,
+                    "service_account_token": null
+                  }
+                ]
+              },
+              "quobyte": null,
+              "rbd": null,
+              "scale_io": null,
+              "secret": null,
+              "storageos": null,
+              "vsphere_volume": null
+            }
+          ]
+        },
+        "status": {
+          "conditions": [
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-10-24T20:12:11+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "PodReadyToStartContainers"
+            },
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-10-24T20:12:10+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "Initialized"
+            },
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-10-24T20:12:11+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "Ready"
+            },
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-10-24T20:12:11+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "ContainersReady"
+            },
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-10-24T20:12:10+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "PodScheduled"
+            }
+          ],
+          "container_statuses": [
+            {
+              "allocated_resources": null,
+              "allocated_resources_status": null,
+              "container_id": "containerd://dba1f3a6d1af3613ca64cdf661cb4e6889223e422f78051c1ef84b1c5f8c20ce",
+              "image": "docker.io/library/nginx:1.27",
+              "image_id": "docker.io/library/nginx@sha256:6784fb0834aa7dbbe12e3d7471e69c290df3e6ba810dc38b34ae33d3c1c05f7d",
+              "last_state": {
+                "running": null,
+                "terminated": null,
+                "waiting": null
+              },
+              "name": "nginx",
+              "ready": true,
+              "resources": null,
+              "restart_count": 0,
+              "started": true,
+              "state": {
+                "running": {
+                  "started_at": "2025-10-24T20:12:10+00:00"
+                },
+                "terminated": null,
+                "waiting": null
+              },
+              "stop_signal": null,
+              "user": null,
+              "volume_mounts": [
+                {
+                  "mount_path": "/var/run/secrets/kubernetes.io/serviceaccount",
+                  "name": "kube-api-access-d6svl",
+                  "read_only": true,
+                  "recursive_read_only": "Disabled"
+                }
+              ]
+            }
+          ],
+          "ephemeral_container_statuses": null,
+          "extended_resource_claim_status": null,
+          "host_ip": "172.18.0.2",
+          "host_i_ps": [
+            {
+              "ip": "172.18.0.2"
+            }
+          ],
+          "init_container_statuses": null,
+          "message": null,
+          "nominated_node_name": null,
+          "observed_generation": null,
+          "phase": "Running",
+          "pod_ip": "10.244.0.134",
+          "pod_i_ps": [
+            {
+              "ip": "10.244.0.134"
+            }
+          ],
+          "qos_class": "BestEffort",
+          "reason": null,
+          "resize": null,
+          "resource_claim_statuses": null,
+          "start_time": "2025-10-24T20:12:10+00:00"
+        }
+      }
+    ]
+  }
+}

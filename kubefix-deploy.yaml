@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubefix
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gemini-secret
+  namespace: kubefix
+type: Opaque
+stringData:
+  GEMINI_API_KEY: "<PUT_YOUR_GEMINI_API_KEY_HERE>"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubefix
+  namespace: kubefix
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: kubefix}
+  template:
+    metadata:
+      labels: {app: kubefix}
+    spec:
+      containers:
+        - name: api
+          image: kubefix:dev
+          imagePullPolicy: IfNotPresent
+          ports: [{containerPort: 8080}]
+          env:
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gemini-secret
+                  key: GEMINI_API_KEY
+            - name: GEMINI_MODEL
+              value: "gemini-2.0-flash"
+          volumeMounts:
+            - name: kubeconfig
+              mountPath: /root/.kube
+              readOnly: true
+      volumes:
+        # give in-cluster access; for kind, KubeFix can use in-cluster config (serviceaccount)
+        # comment this volume out; kubernetes python client will load incluster config automatically
+        - name: kubeconfig
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubefix
+  namespace: kubefix
+spec:
+  selector: {app: kubefix}
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

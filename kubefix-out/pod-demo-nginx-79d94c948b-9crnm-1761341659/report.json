@@ -1,0 +1,8 @@
+{
+  "rbac_patch": "apiVersion: rbac.authorization.k8s.io/v1\nkind: ClusterRole\nmetadata:\n  name: over-perm\nrules:\n- apiGroups: [\"\"]\n  resources: [\"pods\", \"pods/log\", \"services\", \"endpoints\"]\n  verbs: [\"get\", \"list\", \"watch\"]\n- apiGroups: [\"apps\"]\n  resources: [\"deployments\", \"replicasets\"]\n  verbs: [\"get\", \"list\", \"watch\"]",
+  "netpol_patch": null,
+  "podsec_patch": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: nginx-79d94c948b\n  namespace: demo\nspec:\n  template:\n    spec:\n      securityContext:\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n      - name: nginx\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop:\n            - ALL\n          readOnlyRootFilesystem: true\n          runAsUser: 1000\n          runAsGroup: 1000",
+  "summary": "The ClusterRole 'over-perm' grants excessive permissions. It has been restricted to only allow 'get', 'list', and 'watch' on 'pods', 'services', 'endpoints', 'deployments', and 'replicasets'. The pod's security context has been hardened to align with Pod Security Standards (restricted profile) by setting 'allowPrivilegeEscalation' to false, dropping all capabilities, setting 'readOnlyRootFilesystem' to true, and setting a non-root user and group.",
+  "confidence": 0.9,
+  "risk": "high"
+}

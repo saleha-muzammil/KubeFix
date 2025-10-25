@@ -1,0 +1,8 @@
+{
+  "rbac_patch": "apiVersion: rbac.authorization.k8s.io/v1\nkind: ClusterRole\nmetadata:\n  name: over-perm\nrules:\n- apiGroups:\n  - \"\"\n  resources:\n  - pods\n  verbs:\n  - get\n  - list\n  - watch",
+  "netpol_patch": null,
+  "podsec_patch": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-858ddf8b75-sfvd7\n  namespace: demo\nspec:\n  containers:\n  - name: nginx\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n      readOnlyRootFilesystem: true\n      runAsNonRoot: true\n      runAsUser: 1000\n  securityContext:\n    seccompProfile:\n      type: RuntimeDefault",
+  "summary": "The pod's security context is not hardened. The ClusterRole grants excessive permissions. Applied pod security hardening and reduced ClusterRole permissions.",
+  "confidence": 0.9,
+  "risk": "high"
+}

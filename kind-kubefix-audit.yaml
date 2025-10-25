@@ -1,0 +1,23 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: kubefix
+kubeadmConfigPatches:
+- |
+  kind: ClusterConfiguration
+  apiServer:
+    extraArgs:
+      audit-log-path: /var/log/kubernetes/audit.log
+      audit-policy-file: /etc/kubernetes/policies/audit-policy.yaml
+      audit-webhook-config-file: /etc/kubernetes/policies/audit-webhook.yaml
+    extraVolumes:
+    - name: audit-policies
+      hostPath: /etc/kubernetes/policies
+      mountPath: /etc/kubernetes/policies
+      readOnly: true
+      pathType: DirectoryOrCreate
+nodes:
+- role: control-plane
+  extraMounts:
+  - hostPath: ./audit-policies
+    containerPath: /etc/kubernetes/policies
+    readOnly: true

@@ -1,0 +1,8 @@
+{
+  "rbac_patch": "apiVersion: rbac.authorization.k8s.io/v1\nkind: ClusterRole\nmetadata:\n  name: over-perm\nrules:\n- apiGroups: [\"\"]\n  resources: [\"pods\", \"pods/log\", \"services\", \"endpoints\"]\n  verbs: [\"get\", \"list\", \"watch\"]\n- apiGroups: [\"apps\"]\n  resources: [\"deployments\", \"replicasets\"]\n  verbs: [\"get\", \"list\", \"watch\"]",
+  "netpol_patch": null,
+  "podsec_patch": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: nginx-79d94c948b\n  namespace: demo\nspec:\n  template:\n    spec:\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault\n      containers:\n        - name: nginx\n          securityContext:\n            allowPrivilegeEscalation: false\n            capabilities:\n              drop: [\"ALL\"]\n            readOnlyRootFilesystem: true\n            runAsUser: 1000",
+  "summary": "The Pod's ServiceAccount has overly permissive ClusterRole bindings. The ClusterRole grants wildcard access to all resources and verbs. The ClusterRole is updated to restrict access to specific resources and verbs required for the application. The Pod's security context is hardened to align with Pod Security Standards (restricted profile) by setting `runAsNonRoot`, a `seccompProfile`, dropping all capabilities, preventing privilege escalation, and setting `readOnlyRootFilesystem`.",
+  "confidence": 0.9,
+  "risk": "high"
+}

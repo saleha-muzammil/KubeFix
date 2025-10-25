@@ -1,0 +1,42 @@
+driver:
+  enabled: false
+
+collectors:
+  k8sAudit:
+    enabled: true
+
+falco:
+  json_output: true
+  
+  load_plugins:
+    - k8saudit
+
+  plugins:
+    - name: k8saudit
+      library_path: /usr/share/falco/plugins/libk8saudit.so
+      init_config: ""
+      open_params: "http://0.0.0.0:9765/k8s-audit"
+
+  http_output:
+    enabled: true
+    url: "http://falcosidekick.falco.svc.cluster.local:2801/"
+
+  rules_files:
+    - /etc/falco/falco_rules.yaml
+    - /etc/falco/falco_rules.local.yaml
+    - /etc/falco/rules.d
+
+falcoctl:
+  config:
+    artifact:
+      install:
+        enabled: true
+        refs:
+          - ghcr.io/falcosecurity/plugins/plugin/k8saudit:latest
+          - ghcr.io/falcosecurity/plugins/ruleset/k8saudit:latest
+          - ghcr.io/falcosecurity/rules/falco-rules:5
+      follow:
+        enabled: true
+        refs:
+          - ghcr.io/falcosecurity/plugins/plugin/k8saudit:latest
+          - ghcr.io/falcosecurity/plugins/ruleset/k8saudit:latest

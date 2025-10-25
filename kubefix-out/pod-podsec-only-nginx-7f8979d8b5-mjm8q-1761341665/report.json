@@ -1,0 +1,8 @@
+{
+  "rbac_patch": null,
+  "netpol_patch": null,
+  "podsec_patch": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: nginx-7f8979d8b5\n  namespace: podsec-only\nspec:\n  template:\n    spec:\n      containers:\n        - name: nginx\n          securityContext:\n            allowPrivilegeEscalation: false\n            capabilities:\n              drop:\n                - ALL\n            readOnlyRootFilesystem: true\n            seccompProfile:\n              type: RuntimeDefault\n      securityContext:\n        seccompProfile:\n          type: RuntimeDefault",
+  "summary": "Hardening pod to meet restricted pod security standards: Added seccomp profile, dropped capabilities, set readOnlyRootFilesystem, and prevent privilege escalation.",
+  "confidence": 0.9,
+  "risk": "low"
+}

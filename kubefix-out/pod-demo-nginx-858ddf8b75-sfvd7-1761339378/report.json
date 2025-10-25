@@ -1,0 +1,8 @@
+{
+  "rbac_patch": null,
+  "netpol_patch": null,
+  "podsec_patch": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: nginx-858ddf8b75-sfvd7\n  namespace: demo\nspec:\n  containers:\n  - name: nginx\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop:\n        - ALL\n      readOnlyRootFilesystem: true\n      runAsNonRoot: true\n      runAsUser: 101\n  securityContext:\n    seccompProfile:\n      type: RuntimeDefault",
+  "summary": "Hardened pod security context to comply with Pod Security Standards (restricted). Removed NET_ADMIN, SYS_ADMIN, and SYS_PTRACE capabilities, set allowPrivilegeEscalation to false, set readOnlyRootFilesystem to true, set runAsNonRoot to true, set runAsUser to 101, and added a seccompProfile.",
+  "confidence": 0.9,
+  "risk": "medium"
+}

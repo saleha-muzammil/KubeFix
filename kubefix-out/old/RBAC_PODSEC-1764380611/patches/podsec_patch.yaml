@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-5f587c98c5-jpb9f
+  namespace: rbac-podsec
+spec:
+  containers:
+  - name: nginx
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      privileged: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault

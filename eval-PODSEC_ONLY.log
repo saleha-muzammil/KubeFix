@@ -1,0 +1,18 @@
+{
+  "rbac_static_ok": true,
+  "can_i_summary": {
+    "get:pods": "yes",
+    "list:pods": "yes",
+    "watch:pods": "no",
+    "get:secrets": "no",
+    "list:secrets": "no",
+    "get:configmaps": "no",
+    "list:configmaps": "no",
+    "create:pods": "no",
+    "delete:pods": "no"
+  },
+  "kyverno_ok": null,
+  "notes": [
+    "RBAC pre-change summary: {'role_count': 1, 'cluster_role_count': 0, 'role_resources': 1, 'cluster_role_resources': 0}"
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "rbac_patch": null,
+  "netpol_patch": null,
+  "podsec_patch": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: insecure-web-6d78b6d8dd\n  namespace: podsec-only\nspec:\n  template:\n    spec:\n      containers:\n        - name: web\n          securityContext:\n            allowPrivilegeEscalation: false\n            capabilities:\n              drop:\n                - ALL\n            privileged: false\n            readOnlyRootFilesystem: true\n            runAsNonRoot: true\n            runAsUser: 1000\n      securityContext:\n        seccompProfile:\n          type: RuntimeDefault",
+  "summary": "Hardens the pod to adhere to the restricted Pod Security Standard by dropping capabilities, preventing privilege escalation, running as non-root, and enabling seccomp.",
+  "confidence": 0.9,
+  "risk": "high"
+}

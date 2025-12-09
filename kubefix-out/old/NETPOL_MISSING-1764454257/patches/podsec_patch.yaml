@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: payments-api-778b99cbdd
+  namespace: payments
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault

@@ -1,0 +1,10 @@
+scenario,model,trial,elapsed_sec,rbac_patch,netpol_patch,podsec_patch,confidence,prompt_tokens,completion_tokens,total_tokens,input_cost_usd,output_cost_usd,total_cost_usd
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,1,2,false,false,true,0.9,64,172,236,0.00000896,0.00002408,0.00003304
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,2,3,false,false,true,0.9,64,205,269,0.00000896,0.00002870,0.00003766
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,3,3,false,false,true,0.9,64,172,236,0.00000896,0.00002408,0.00003304
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,4,2,false,false,true,0.9,64,190,254,0.00000896,0.00002660,0.00003556
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,5,3,false,false,true,0.9,64,205,269,0.00000896,0.00002870,0.00003766
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,6,3,false,false,true,0.9,64,205,269,0.00000896,0.00002870,0.00003766
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,7,2,false,false,true,0.9,64,172,236,0.00000896,0.00002408,0.00003304
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,8,3,false,false,true,0.9,64,169,233,0.00000896,0.00002366,0.00003262
+PODSEC_ONLY,deepseek-ai/deepseek-coder-6.7b-instruct,9,3,false,false,true,0.9,64,205,269,0.00000896,0.00002870,0.00003766

@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: podsec-only
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: web-sa
+  namespace: podsec-only
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: web-reader
+  namespace: podsec-only
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: web-reader-binding
+  namespace: podsec-only
+subjects:
+  - kind: ServiceAccount
+    name: web-sa
+    namespace: podsec-only
+roleRef:
+  kind: Role
+  name: web-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insecure-web
+  namespace: podsec-only
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insecure-web
+  template:
+    metadata:
+      labels:
+        app: insecure-web
+    spec:
+      serviceAccountName: web-sa
+      containers:
+        - name: web
+          image: nginx:stable
+          ports:
+            - containerPort: 80
+          securityContext:
+            privileged: true
+            allowPrivilegeEscalation: true
+            runAsUser: 0
+

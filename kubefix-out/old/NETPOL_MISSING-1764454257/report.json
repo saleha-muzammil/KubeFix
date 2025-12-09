@@ -1,0 +1,8 @@
+{
+  "rbac_patch": null,
+  "netpol_patch": "apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: payments-api-default-deny-ingress\n  namespace: payments\nspec:\n  podSelector:\n    matchLabels:\n      app: payments-api\n  ingress: []\n  policyTypes:\n  - Ingress",
+  "podsec_patch": "apiVersion: apps/v1\nkind: ReplicaSet\nmetadata:\n  name: payments-api-778b99cbdd\n  namespace: payments\nspec:\n  template:\n    spec:\n      securityContext:\n        runAsNonRoot: true\n        seccompProfile:\n          type: RuntimeDefault",
+  "summary": "Added a NetworkPolicy to deny all ingress traffic to the payments-api pod by default, and hardened the pod's security context to adhere to the restricted Pod Security Standard by setting runAsNonRoot=true and seccompProfile=RuntimeDefault.",
+  "confidence": 0.9,
+  "risk": "low"
+}

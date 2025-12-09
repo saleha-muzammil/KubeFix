@@ -1,0 +1,8 @@
+{
+  "rbac_patch": null,
+  "netpol_patch": null,
+  "podsec_patch": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: victim\n  namespace: default\nspec:\n  securityContext:\n    seccompProfile:\n      type: RuntimeDefault\n    runAsNonRoot: true\n    runAsUser: 1000\n  containers:\n    - name: victim\n      securityContext:\n        allowPrivilegeEscalation: false\n        capabilities:\n          drop:\n            - ALL",
+  "summary": "Apply Pod Security Standards (restricted) to the pod by setting securityContext and dropping capabilities.",
+  "confidence": 0.9,
+  "risk": "medium"
+}

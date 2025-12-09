@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stateful-rbac
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: redis-sa
+  namespace: stateful-rbac
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: redis-overperm
+  namespace: stateful-rbac
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "secrets", "configmaps"]
+    verbs: ["get", "list", "watch", "create", "delete", "update"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: redis-overperm-binding
+  namespace: stateful-rbac
+subjects:
+  - kind: ServiceAccount
+    name: redis-sa
+    namespace: stateful-rbac
+roleRef:
+  kind: Role
+  name: redis-overperm
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: stateful-rbac
+spec:
+  clusterIP: None
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  namespace: stateful-rbac
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      serviceAccountName: redis-sa
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: true
+          command: ["redis-server"]
+

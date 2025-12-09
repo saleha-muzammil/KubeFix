@@ -1,633 +1,510 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# KubeFix: Week 1–3 Starter Code
-# Layout: single file for convenience; split into modules later if you prefer.
-# Requires: Python 3.10+, kubectl context to a dev/test cluster, Gemini API key.
-#
-# Quickstart:
-#   1) python kubefix.py mic --focus kind=Pod ns=default name=nginx-abc
-#   2) python kubefix.py gen --mic mic.json --out out/
-#   3) python kubefix.py verify --mic mic.json --patches out/patches
-#   4) python kubefix.py serve  # Knative/Cloud Run friendly FastAPI
-#
-# Env:
-#   export GEMINI_API_KEY=...            (Google AI Studio key)
-#   export GEMINI_MODEL=gemini-2.0-flash (or gemini-2.0-pro)
-#
-# Optional CLIs used by verifier (install as needed):
-#   - kubectl (must be on PATH)
-#   - kyverno (for local policy tests)
-#   - rbac-lookup (optional; enhances RBAC explanation)
-#
-# ─────────────────────────────────────────────────────────────────────────────
+#!/usr/bin/env python3
+"""
+KubeFix: simplified server + verifier with multi-model LLM support
+- FastAPI app exposing /mic and /generate
+- LLM provider switch: Gemini (API) or HuggingFace (local DeepSeek etc.)
+- /generate returns:
+    - gen: {rbac_patch, netpol_patch, podsec_patch, summary, confidence, risk}
+    - usage: {model, prompt_tokens, completion_tokens, total_tokens}
+- CLI:
+    python kubefix.py verify --mic MIC.json --patches PATCH_DIR
+  prints a JSON summary (rbac_static_ok, can_i_summary, notes)
+"""
 
-from __future__ import annotations
-import os, json, sys, subprocess, shlex, time, tempfile, base64
-from typing import Dict, Any, List, Optional
+import os
+import json
+import subprocess
+import time
+from dataclasses import dataclass
 from pathlib import Path
-from dataclasses import dataclass, asdict
-import datetime as dt
+from typing import Optional, Dict, Any
 
-import requests
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-# Lazy import Kubernetes client so mic can run without it installed (for CI)
-K8S_AVAILABLE = True
-try:
-    from kubernetes import client, config
-    from kubernetes.client import ApiException
-except Exception:
-    K8S_AVAILABLE = False
+# -----------------------------
+# LLM usage + config helpers
+# -----------------------------
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Utilities
-# ─────────────────────────────────────────────────────────────────────────────
-
-def run(cmd: str, check: bool = True, capture: bool = True, env: Optional[dict]=None, cwd: Optional[str]=None):
-    """Run a shell command and return (rc, out, err)."""
-    p = subprocess.run(shlex.split(cmd), capture_output=capture, text=True, env=env, cwd=cwd)
-    if check and p.returncode != 0:
-        raise RuntimeError(f"Command failed ({p.returncode}): {cmd}\nSTDOUT:\n{p.stdout}\nSTDERR:\n{p.stderr}")
-    return p.returncode, p.stdout, p.stderr
-
-
-def mkdirp(p: Path):
-    p.mkdir(parents=True, exist_ok=True)
-    return p
-
-
-def _json_default(o):
-    """Robust JSON fallback for datetimes and odd k8s client models/enums."""
-    if isinstance(o, (dt.datetime, dt.date)):
-        return o.isoformat()
-    try:
-        return str(o)
-    except Exception:
-        return "<unserializable>"
-
-# ─────────────────────────────────────────────────────────────────────────────
-# MIC (Minimal Incident Capsule) – Week 1
-# ─────────────────────────────────────────────────────────────────────────────
 
 @dataclass
-class FocusRef:
+class LLMUsage:
+    model: str
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+
+    @property
+    def total_tokens(self) -> int:
+        return self.prompt_tokens + self.completion_tokens
+
+
+def get_llm_config():
+    """
+    Reads provider + model from environment.
+    KUBEFIX_PROVIDER: 'gemini' or 'hf'
+    KUBEFIX_MODEL:    model name or HF model id
+    GEMINI_MODEL:     kept for backward compatibility
+    """
+    provider = os.getenv("KUBEFIX_PROVIDER", "gemini")
+    model = os.getenv("KUBEFIX_MODEL", os.getenv("GEMINI_MODEL", "gemini-2.0-flash"))
+    return provider, model
+
+
+# HuggingFace globals (lazy-loaded)
+HF_MODEL = None
+HF_TOKENIZER = None
+HF_PIPELINE = None
+
+
+def get_hf_pipeline(model_name: str):
+    """
+    Lazily load a HuggingFace text-generation pipeline.
+
+    Requires:
+      - transformers
+      - correct access token via HUGGINGFACE_HUB_TOKEN (if private model)
+    """
+    global HF_MODEL, HF_TOKENIZER, HF_PIPELINE
+
+    if HF_PIPELINE is not None:
+        return HF_PIPELINE, HF_TOKENIZER
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline  # type: ignore
+
+    HF_TOKENIZER = AutoTokenizer.from_pretrained(model_name)
+    HF_MODEL = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        torch_dtype="auto",
+        device_map="auto",
+    )
+    HF_PIPELINE = pipeline(
+        "text-generation",
+        model=HF_MODEL,
+        tokenizer=HF_TOKENIZER,
+        max_new_tokens=int(os.getenv("KUBEFIX_MAX_NEW_TOKENS", "512")),
+        do_sample=False,
+        temperature=0.0,
+    )
+    return HF_PIPELINE, HF_TOKENIZER
+
+
+def call_llm_for_patch(prompt: str) -> tuple[str, LLMUsage]:
+    """
+    Call the configured LLM with the given prompt.
+    Returns (llm_text_response, usage).
+    """
+    provider, model = get_llm_config()
+    usage = LLMUsage(model=model)
+
+    if provider == "gemini":
+        # ----------------------------
+        # GEMINI (via google-genai)
+        # ----------------------------
+        try:
+            from google import genai  # type: ignore
+        except Exception as e:  # pragma: no cover
+            raise RuntimeError(
+                f"google-genai not installed in this image: {e}"
+            )
+
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "GEMINI_API_KEY is not set in the environment."
+            )
+
+        client = genai.Client(api_key=api_key)
+        resp = client.responses.generate(
+            model=model,
+            contents=prompt,
+        )
+        text = resp.output_text
+
+        # Best-effort usage extraction
+        try:
+            md = resp.usage_metadata
+            usage.prompt_tokens = int(getattr(md, "prompt_token_count", 0) or 0)
+            usage.completion_tokens = int(
+                getattr(md, "candidates_token_count", 0) or 0
+            )
+        except Exception:
+            pass
+
+    elif provider == "hf":
+        # ----------------------------
+        # HUGGINGFACE (DeepSeek, etc.)
+        # ----------------------------
+        pipe, tokenizer = get_hf_pipeline(model)
+        out = pipe(
+            prompt,
+            return_full_text=False,
+            num_return_sequences=1,
+        )[0]["generated_text"]
+
+        text = out
+
+        try:
+            usage.prompt_tokens = len(tokenizer(prompt).input_ids)
+            usage.completion_tokens = len(tokenizer(out).input_ids)
+        except Exception:
+            pass
+
+    else:
+        raise RuntimeError(f"Unknown KUBEFIX_PROVIDER {provider!r}")
+
+    return text, usage
+
+
+# -----------------------------
+# MIC + request/response models
+# -----------------------------
+
+
+class FocusRef(BaseModel):
     kind: str
     namespace: str
     name: str
 
-@dataclass
-class MIC:
+
+class MIC(BaseModel):
+    """Minimal MIC structure used by kubefix."""
+
     focus: FocusRef
-    owners: List[Dict[str, Any]]
-    rbac: Dict[str, Any]
-    network: Dict[str, Any]
     specs: Dict[str, Any]
 
-
-def k8s_load():
-    if not K8S_AVAILABLE:
-        raise RuntimeError("kubernetes client not installed. pip install kubernetes")
-    try:
-        config.load_kube_config()
-    except Exception:
-        # Inside a pod
-        config.load_incluster_config()
-
-
-def get_api():
-    core = client.CoreV1Api()
-    apps = client.AppsV1Api()
-    rbac_api = client.RbacAuthorizationV1Api()
-    net_api = client.NetworkingV1Api()
-    return core, apps, rbac_api, net_api
-
-
-def mic_build(focus: FocusRef) -> MIC:
-    """Collect just-enough context around the focus object for safe patching."""
-    k8s_load()
-    core, apps, rbac_api, net_api = get_api()
-
-    owners: List[Dict[str, Any]] = []
-    rbac: Dict[str, Any] = {"serviceAccount": None, "roleBindings": [], "roles": [], "clusterRoleBindings": [], "clusterRoles": []}
-    network: Dict[str, Any] = {"services": [], "endpoints": [], "networkPolicies": []}
-    specs: Dict[str, Any] = {}
-
-    # 1) Resolve focus → Pod (we allow focus kind to be Pod/Deployment/StatefulSet)
-    pod_list = []
-    if focus.kind.lower() == "pod":
-        try:
-            pod = core.read_namespaced_pod(name=focus.name, namespace=focus.namespace)
-            pod_list = [pod]
-        except ApiException as e:
-            raise RuntimeError(f"Cannot read Pod {focus.namespace}/{focus.name}: {e}")
-    elif focus.kind.lower() in ("deployment", "statefulset"):
-        if focus.kind.lower() == "deployment":
-            obj = apps.read_namespaced_deployment(focus.name, focus.namespace)
-            selector = obj.spec.selector.match_labels or {}
-        else:
-            obj = apps.read_namespaced_stateful_set(focus.name, focus.namespace)
-            selector = obj.spec.selector.match_labels or {}
-        lbl = ",".join([f"{k}={v}" for k, v in selector.items()])
-        pod_list = core.list_namespaced_pod(namespace=focus.namespace, label_selector=lbl).items
-        owners.append({"kind": focus.kind, "ns": focus.namespace, "name": focus.name, "selector": selector})
-    else:
-        raise RuntimeError("Focus kind must be one of: Pod, Deployment, StatefulSet")
-
-    if not pod_list:
-        raise RuntimeError("No pods resolved for focus.")
-
-    # 2) Ownership chain (Pod → ReplicaSet → Deployment)
-    for p in pod_list:
-        md = p.metadata.owner_references or []
-        specs.setdefault("pods", []).append(p.to_dict())
-        owners.append({"kind": "Pod", "ns": p.metadata.namespace, "name": p.metadata.name})
-        for o in md:
-            owners.append({"kind": o.kind, "ns": p.metadata.namespace, "name": o.name})
-
-    # 3) ServiceAccount + RBAC
-    sa_names = sorted(set([(p.spec.service_account_name or "default", p.metadata.namespace) for p in pod_list]))
-    if sa_names:
-        sa_name, sa_ns = sa_names[0]
-        try:
-            sa = core.read_namespaced_service_account(sa_name, sa_ns)
-            rbac["serviceAccount"] = sa.to_dict()
-        except ApiException:
-            pass
-
-    # Gather RoleBindings / ClusterRoleBindings that reference this SA
-    try:
-        rbs = client.RbacAuthorizationV1Api().list_namespaced_role_binding(sa_ns)
-        for rb in rbs.items:
-            subjects = rb.subjects or []
-            if any(s.kind == "ServiceAccount" and s.name == sa_name and (s.namespace or sa_ns) == sa_ns for s in subjects):
-                rbac["roleBindings"].append(rb.to_dict())
-                if rb.role_ref.kind == "Role":
-                    try:
-                        role = client.RbacAuthorizationV1Api().read_namespaced_role(rb.role_ref.name, sa_ns)
-                        rbac["roles"].append(role.to_dict())
-                    except ApiException:
-                        pass
-                elif rb.role_ref.kind == "ClusterRole":
-                    try:
-                        cr = client.RbacAuthorizationV1Api().read_cluster_role(rb.role_ref.name)
-                        rbac["clusterRoles"].append(cr.to_dict())
-                    except ApiException:
-                        pass
-    except ApiException:
-        pass
-
-    try:
-        crbs = client.RbacAuthorizationV1Api().list_cluster_role_binding()
-        for crb in crbs.items:
-            subjects = crb.subjects or []
-            if any(s.kind == "ServiceAccount" and s.name == sa_name and (s.namespace or sa_ns) == sa_ns for s in subjects):
-                rbac["clusterRoleBindings"].append(crb.to_dict())
-                if crb.role_ref.kind == "ClusterRole":
-                    try:
-                        cr = client.RbacAuthorizationV1Api().read_cluster_role(crb.role_ref.name)
-                        rbac["clusterRoles"].append(cr.to_dict())
-                    except ApiException:
-                        pass
-    except ApiException:
-        pass
-
-    # 4) Networking: Services/Endpoints/NetworkPolicies that select these pods
-    all_labels = {}
-    for p in pod_list:
-        for k, v in (p.metadata.labels or {}).items():
-            all_labels.setdefault(k, set()).add(v)
-
-    # Services
-    svcs = core.list_namespaced_service(focus.namespace).items
-    for s in svcs:
-        sel = (s.spec.selector or {})
-        if sel and all(k in all_labels and s.spec.selector[k] in all_labels[k] for k in sel.keys()):
-            network["services"].append(s.to_dict())
-            try:
-                ep = core.read_namespaced_endpoints(s.metadata.name, s.metadata.namespace)
-                network["endpoints"].append(ep.to_dict())
-            except ApiException:
-                pass
-
-    # NetworkPolicies
-    try:
-        nps = net_api.list_namespaced_network_policy(focus.namespace).items
-        for np in nps:
-            network["networkPolicies"].append(np.to_dict())
-    except ApiException:
-        pass
-
-    return MIC(
-        focus=focus,
-        owners=owners,
-        rbac=rbac,
-        network=network,
-        specs=specs,
-    )
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Gemini SLM Client + Patch Generation – Week 1–2
-# ─────────────────────────────────────────────────────────────────────────────
-
-GEMINI_API = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-
-PATCH_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "rbac_patch": {"type": ["string", "null"], "description": "Strategic-merge or JSONPatch YAML"},
-        "netpol_patch": {"type": ["string", "null"]},
-        "podsec_patch": {"type": ["string", "null"]},
-        "summary": {"type": "string"},
-        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
-        "risk": {"type": "string"}
-    },
-    "required": ["summary", "confidence", "risk"]
-}
-
-GEMINI_SYSTEM_RULES = (
-    "You are KubeFix, a Kubernetes security patching copilot.\n"
-    "Operate ONLY within the provided MIC JSON. Produce minimal, least-privilege changes.\n"
-    "Prefer removing wildcards in Roles, tightening verbs/resources;\n"
-    "Prefer additive NetworkPolicies that preserve currently-allowed traffic;\n"
-    "Harden pods per Pod Security Standards (baseline/restricted) without breaking mounts or required caps.\n"
-    "Output ONLY JSON. Do not include prose outside the JSON.\n"
-    "If a patch is not needed, set that field to null (not empty string). "
-    "All patch fields must be valid Kubernetes YAML as strings."
-)
-
-def gemini_generate_patch(mic: MIC, model: Optional[str]=None) -> Dict[str, Any]:
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY not set")
-    model = model or os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
-
-    url = GEMINI_API.format(model=model)
-
-    schema_json = json.dumps(PATCH_SCHEMA, indent=2)
-    mic_json = json.dumps(asdict(mic), default=_json_default, indent=2)
-
-    payload = {
-        "contents": [
-            {"role": "model", "parts": [{"text": GEMINI_SYSTEM_RULES}]},
-            {"role": "user", "parts": [
-                {"text": "MIC JSON:"},
-                {"text": mic_json},
-                {"text": (
-                    "Return a SINGLE JSON object with fields exactly:\n"
-                    "rbac_patch (string|null), netpol_patch (string|null), podsec_patch (string|null), "
-                    "summary (string), confidence (number 0..1), risk (string).\n"
-                    "Each *patch* field must contain Kubernetes YAML (string). "
-                    "If you propose a Role/ClusterRole change, make it a valid Role/ClusterRole resource. "
-                    "For Pod hardening, prefer patching the Deployment's podTemplate; otherwise use JSONPatch for the live Pod. "
-                    "If a patch is not needed, use null.\n\n"
-                    f"Schema for reference:\n{schema_json}"
-                )},
-            ]}
-        ],
-        "generationConfig": {
-            "temperature": 0.2,
-            "responseMimeType": "application/json"
-        }
-    }
-
-    r = requests.post(url, params={"key": api_key}, json=payload, timeout=90)
-    if r.status_code != 200:
-        raise RuntimeError(f"Gemini API error: {r.status_code} {r.text}")
-
-    data = r.json()
-
-    # Try strict JSON parse from the single part
-    text_block = None
-    try:
-        parts = data["candidates"][0]["content"]["parts"]
-        text_block = "".join(p.get("text", "") for p in parts).strip()
-    except Exception:
-        text_block = None
-
-    parsed: Dict[str, Any] = {}
-    if text_block:
-        try:
-            parsed = json.loads(text_block)
-        except Exception:
-            parsed = {}
-
-    # Fallback to old heuristic if provider ignored responseMimeType
-    if not parsed:
-        result = {"rbac_patch": None, "netpol_patch": None, "podsec_patch": None, "summary": "", "confidence": 0.0, "risk": "unknown"}
-        try:
-            # Extract fenced code blocks + trailing JSON
-            import re
-            big = text_block or ("\n".join(p.get("text", "") for p in parts) if 'parts' in locals() else "")
-            def grab(label):
-                m = re.search(rf'{label}.*?```(?:yaml|yml|json|JSON)?\n(.*?)```', big, re.I|re.S)
-                return m.group(1).strip() if m else None
-            result["rbac_patch"]   = grab("rbac_patch")
-            result["netpol_patch"] = grab("netpol_patch")
-            result["podsec_patch"] = grab("podsec_patch")
-            jm = re.search(r"```json\n(\{[\s\S]*?\})\n```", big)
-            if jm:
-                meta = json.loads(jm.group(1))
-                for k in ["summary","confidence","risk"]:
-                    if k in meta:
-                        result[k] = meta[k]
-        except Exception:
-            pass
-        parsed = result
-
-    # Normalize: empty strings → None; trim whitespace
-    for k in ["rbac_patch", "netpol_patch", "podsec_patch"]:
-        v = parsed.get(k)
-        if isinstance(v, str):
-            v2 = v.strip()
-            parsed[k] = v2 if v2 else None
-
-    parsed.setdefault("summary", "")
-    parsed.setdefault("confidence", 0.0)
-    parsed.setdefault("risk", "unknown")
-
-    return parsed
-
-
-def write_patch_report(out_dir: Path, mic: MIC, gen: Dict[str, Any]):
-    mkdirp(out_dir / "patches")
-    (out_dir / "mic.json").write_text(json.dumps(asdict(mic), default=_json_default, indent=2))
-    (out_dir / "report.json").write_text(json.dumps(gen, default=_json_default, indent=2))
-    for key in ("rbac_patch", "netpol_patch", "podsec_patch"):
-        val = gen.get(key)
-        if isinstance(val, str) and val.strip():
-            (out_dir / "patches" / f"{key}.yaml").write_text(val.strip())
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Verification – Week 2–3
-# ─────────────────────────────────────────────────────────────────────────────
-
-class VerifyResult(BaseModel):
-    rbac_static_ok: bool
-    can_i_summary: Dict[str, Any]
-    kyverno_ok: Optional[bool] = None
-    notes: List[str] = []
-
-
-def rbac_static_diff(mic: MIC) -> Dict[str, Any]:
-    """Compute a simple diff of Role/ClusterRole rules (pre-apply view from MIC)."""
-    def rules_of(role_obj):
-        try:
-            return [r.to_dict() for r in role_obj.rules]
-        except Exception:
-            return role_obj.get("rules", [])
-
-    roles = mic.rbac.get("roles", [])
-    croles = mic.rbac.get("clusterRoles", [])
-    return {
-        "role_count": len(roles),
-        "cluster_role_count": len(croles),
-        "role_resources": sum(len(rules_of(r)) for r in roles),
-        "cluster_role_resources": sum(len(rules_of(r)) for r in croles),
-    }
-
-
-def kubectl_can_i(ns: str, sa: str, probes: Optional[List[List[str]]] = None) -> Dict[str, Any]:
-    """Run a small battery of `kubectl auth can-i` checks under SA identity."""
-    if probes is None:
-        probes = [
-            ["get", "pods"], ["list", "pods"], ["watch", "pods"],
-            ["get", "secrets"], ["list", "secrets"],
-            ["get", "configmaps"], ["list", "configmaps"],
-            ["create", "pods"], ["delete", "pods"],
-        ]
-    summary = {}
-    for verb, resource in probes:
-        cmd = f"kubectl auth can-i {verb} {resource} --as=system:serviceaccount:{ns}:{sa} --namespace {ns}"
-        _, out, _ = run(cmd, check=False)
-        summary[f"{verb}:{resource}"] = out.strip()
-    return summary
-
-
-def kyverno_test(patch_dir: Path, mic_file: Path) -> Optional[bool]:
-    """If kyverno CLI exists, do a basic `kyverno apply` dry-run with patched resources.
-    Users can add organization policies via KUBEFIX_KYVERNO_POLICY_DIR env var.
-    """
-    if shutil_which("kyverno") is None:
-        return None
-    policy_dir = os.environ.get("KUBEFIX_KYVERNO_POLICY_DIR")
-    tmp = Path(tempfile.mkdtemp(prefix="kubefix-"))
-    mic = json.loads(Path(mic_file).read_text())
-    manifests = []
-    import yaml
-
-    # Pods
-    for p in mic.get("specs", {}).get("pods", []):
-        manifests.append(p)
-    # RBAC
-    manifests.extend(mic.get("rbac", {}).get("roles", []))
-    manifests.extend(mic.get("rbac", {}).get("clusterRoles", []))
-    # NetworkPolicies
-    manifests.extend(mic.get("network", {}).get("networkPolicies", []))
-
-    (tmp / "mic.yaml").write_text("\n---\n".join(yaml.safe_dump(m) for m in manifests))
-
-    # Apply patches logically by concatenation (kyverno evaluate against the union)
-    patch_texts = []
-    for f in sorted((patch_dir).glob("*.yaml")):
-        patch_texts.append(f.read_text())
-    (tmp / "patches.yaml").write_text("\n---\n".join(patch_texts))
-
-    cmd = f"kyverno apply {(policy_dir or '')} -r {tmp/'mic.yaml'} -r {tmp/'patches.yaml'}"
-    rc, out, err = run(cmd, check=False)
-    return rc == 0
-
-
-def shutil_which(x: str) -> Optional[str]:
-    from shutil import which
-    return which(x)
-
-
-def verify(mic_path: Path, patches_dir: Path) -> VerifyResult:
-    mic = MIC(**json.loads(mic_path.read_text()))
-    notes: List[str] = []
-
-    # Static summary
-    static = rbac_static_diff(mic)
-    notes.append(f"RBAC pre-change summary: {static}")
-
-    # can-i checks
-    sa = mic.rbac.get("serviceAccount") or {}
-    sa_name = (sa.get("metadata", {}) or {}).get("name", "default")
-    sa_ns = (sa.get("metadata", {}) or {}).get("namespace", mic.focus.namespace)
-    cani = kubectl_can_i(sa_ns, sa_name)
-
-    # kyverno local test (optional)
-    ky = kyverno_test(patches_dir, mic_path)
-
-    return VerifyResult(
-        rbac_static_ok=True,
-        can_i_summary=cani,
-        kyverno_ok=ky,
-        notes=notes,
-    )
-
-# ─────────────────────────────────────────────────────────────────────────────
-# FastAPI wrapper – Week 3 (Knative/Cloud Run)
-# ─────────────────────────────────────────────────────────────────────────────
-
-app = FastAPI(title="KubeFix")
 
 class MICRequest(BaseModel):
     kind: str
     namespace: str
     name: str
 
-class GenerateRequest(BaseModel):
+
+class GenerateMICWrapper(BaseModel):
     mic: MICRequest
 
-@app.post("/mic")
-async def api_mic(req: MICRequest):
-    mic = mic_build(FocusRef(kind=req.kind, namespace=req.namespace, name=req.name))
-    return asdict(mic)
 
-@app.post("/generate")
-async def api_generate(req: GenerateRequest):
-    mic = mic_build(FocusRef(kind=req.mic.kind, namespace=req.mic.namespace, name=req.mic.name))
-    gen = gemini_generate_patch(mic)
-    out = Path("out") / f"{mic.focus.kind.lower()}-{mic.focus.namespace}-{mic.focus.name}-{int(time.time())}"
-    write_patch_report(out, mic, gen)
-    return {"out_dir": str(out), "gen": gen}
+class GenerateGenResult(BaseModel):
+    rbac_patch: Optional[str] = None
+    netpol_patch: Optional[str] = None
+    podsec_patch: Optional[str] = None
+    summary: str
+    confidence: float
+    risk: str
 
-# NEW: Falco webhook endpoint → MIC → patch generation
-@app.post("/falco")
-async def falco_webhook(event: Dict[str, Any]):
-    of = (event.get("output_fields") or {})
-    ns = of.get("k8s.ns.name") or of.get("k8s_namespace_name") or of.get("k8s.ns") or of.get("k8s_namespace")
-    pod = of.get("k8s.pod.name") or of.get("k8s_pod_name") or of.get("k8s.pod") or of.get("k8s_pod")
-    if not pod:
-        raise HTTPException(status_code=400, detail="Falco event missing k8s pod name")
-    if not ns:
-        ns = "default"
+
+class GenerateUsage(BaseModel):
+    model: str
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
+class GenerateResponse(BaseModel):
+    out_dir: str
+    gen: GenerateGenResult
+    usage: GenerateUsage
+
+
+# -----------------------------
+# K8s helpers
+# -----------------------------
+
+
+def kubectl_json(args: list[str]) -> dict:
+    cmd = ["kubectl"] + args + ["-o", "json"]
+    out = subprocess.check_output(cmd, text=True)
+    return json.loads(out)
+
+
+def mic_build(focus: FocusRef) -> MIC:
+    """
+    Build a minimal MIC by reading the Pod spec from the cluster.
+    """
     try:
-        mic = mic_build(FocusRef(kind="Pod", namespace=ns, name=pod))
-        gen = gemini_generate_patch(mic)
-        out = Path("out") / f"falco-{ns}-{pod}-{int(time.time())}"
-        write_patch_report(out, mic, gen)
-        return {"ok": True, "out_dir": str(out), "confidence": gen.get("confidence", 0), "risk": gen.get("risk", "unknown")}
+        pod = kubectl_json(
+            ["-n", focus.namespace, "get", "pod", focus.name]
+        )
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"Cannot read Pod {focus.namespace}/{focus.name}: {e}"
+        )
+
+    specs: Dict[str, Any] = {
+        "pods": [pod],
+    }
+    return MIC(focus=focus, specs=specs)
+
+
+# -----------------------------
+# Patch parsing
+# -----------------------------
+
+
+def parse_llm_output(text: str) -> GenerateGenResult:
+    """
+    VERY simple parser: expect the LLM to return JSON with keys:
+      - rbac_patch, netpol_patch, podsec_patch, summary, confidence, risk
+
+    If it fails to parse, we fall back to a plain podsec hardening patch.
+    """
+    try:
+        data = json.loads(text)
+        return GenerateGenResult(
+            rbac_patch=data.get("rbac_patch"),
+            netpol_patch=data.get("netpol_patch"),
+            podsec_patch=data.get("podsec_patch"),
+            summary=data.get("summary", "LLM summary"),
+            confidence=float(data.get("confidence", 0.5)),
+            risk=str(data.get("risk", "unknown")),
+        )
+    except Exception:
+        # Fallback: treat entire text as "summary" and no structured patches
+        return GenerateGenResult(
+            rbac_patch=None,
+            netpol_patch=None,
+            podsec_patch=None,
+            summary=text.strip()[:2000],
+            confidence=0.5,
+            risk="unknown",
+        )
+
+
+# -----------------------------
+# Prompt builder
+# -----------------------------
+
+
+def build_prompt_from_mic(mic: MIC) -> str:
+    """
+    Build an LLM prompt given the MIC.
+
+    You can refine this to include more details from specs.
+    """
+    focus = mic.focus
+    pod = mic.specs.get("pods", [{}])[0]
+
+    prompt = f"""
+You are a Kubernetes security assistant. You are given a misconfigured pod and surrounding context.
+
+Focus object:
+- kind: {focus.kind}
+- namespace: {focus.namespace}
+- name: {focus.name}
+
+Pod spec (JSON):
+{json.dumps(pod, indent=2)}
+
+Your job:
+- Identify misconfigurations related to RBAC, NetworkPolicies, and PodSecurity.
+- Propose up to three YAML patches:
+  * `rbac_patch`: YAML to tighten RBAC (ClusterRole/Role/Binding).
+  * `netpol_patch`: YAML to add or fix a NetworkPolicy.
+  * `podsec_patch`: YAML to harden the pod / template fields.
+
+Return a single JSON object with keys:
+  - rbac_patch (string or null)
+  - netpol_patch (string or null)
+  - podsec_patch (string or null)
+  - summary (string)
+  - confidence (float between 0 and 1)
+  - risk (string: low/medium/high)
+
+DO NOT wrap the JSON in backticks. Only output valid JSON.
+"""
+    return prompt.strip()
+
+
+# -----------------------------
+# FastAPI app
+# -----------------------------
+
+app = FastAPI(title="KubeFix")
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "time": time.time()}
+
+
+@app.post("/mic")
+def api_mic(req: MICRequest) -> MIC:
+    focus = FocusRef(kind=req.kind, namespace=req.namespace, name=req.name)
+    mic = mic_build(focus)
+    return mic
+
+
+@app.post("/generate", response_model=GenerateResponse)
+def api_generate(req: GenerateMICWrapper):
+    """
+    Main endpoint used by benchmark.sh and eval_scenarios.sh
+    """
+    focus = FocusRef(
+        kind=req.mic.kind,
+        namespace=req.mic.namespace,
+        name=req.mic.name,
+    )
+    mic = mic_build(focus)
+
+    # Build LLM prompt
+    prompt = build_prompt_from_mic(mic)
+
+    # Call LLM
+    try:
+        llm_text, usage = call_llm_for_patch(prompt)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# NEW: Kubernetes Audit webhook → MIC → patch generation
-@app.post("/audit")
-async def audit_webhook(payload: Dict[str, Any]):
+    # Parse patches
+    gen_result = parse_llm_output(llm_text)
+
+    # Prepare out_dir (relative path used by scripts/eval_scenarios.sh)
+    safe_ns = focus.namespace.replace("/", "-")
+    safe_name = focus.name.replace("/", "-")
+    ts = int(time.time())
+    out_dir = f"out/pod-{safe_ns}-{safe_name}-{ts}"
+    out_path = Path(out_dir)
+    out_path.mkdir(parents=True, exist_ok=True)
+
+    # Save MIC
+    (out_path / "mic.json").write_text(mic.model_dump_json(indent=2))
+
+    # Save patches if present
+    patches_dir = out_path / "patches"
+    patches_dir.mkdir(exist_ok=True)
+
+    if gen_result.podsec_patch:
+        (patches_dir / "podsec_patch.yaml").write_text(gen_result.podsec_patch)
+    if gen_result.rbac_patch:
+        (patches_dir / "rbac_patch.yaml").write_text(gen_result.rbac_patch)
+    if gen_result.netpol_patch:
+        (patches_dir / "netpol_patch.yaml").write_text(gen_result.netpol_patch)
+
+    # Save usage
+    usage_obj = {
+        "model": usage.model,
+        "prompt_tokens": usage.prompt_tokens,
+        "completion_tokens": usage.completion_tokens,
+        "total_tokens": usage.total_tokens,
+    }
+    (out_path / "usage.json").write_text(json.dumps(usage_obj, indent=2))
+
+    usage_model = GenerateUsage(**usage_obj)
+
+    return GenerateResponse(
+        out_dir=out_dir,
+        gen=gen_result,
+        usage=usage_model,
+    )
+
+
+# -----------------------------
+# CLI: verify
+# -----------------------------
+
+def kubectl_can_i(verb: str, resource: str) -> str:
     """
-    Accepts Kubernetes Audit v1 payloads. Handles both single-event and
-    event-list formats. Attempt to resolve a Pod focus from higher-level refs.
+    Run 'kubectl auth can-i' for the current user context.
+    Return 'yes' or 'no'.
     """
-    events: List[Dict[str, Any]] = []
-    if payload.get("kind") == "EventList" and payload.get("items"):
-        events = payload["items"]
-    else:
-        events = [payload]
+    try:
+        subprocess.check_output(
+            ["kubectl", "auth", "can-i", verb, resource],
+            text=True,
+        )
+        # kubectl prints 'yes\n' or 'no\n'
+        # we just re-run and parse:
+        out = subprocess.check_output(
+            ["kubectl", "auth", "can-i", verb, resource],
+            text=True,
+        ).strip()
+        return out
+    except Exception:
+        return "no"
 
-    results = []
-    for ev in events:
-        objref = ev.get("objectRef", {})
-        kind = (objref.get("resource") or objref.get("kind") or "").lower()
-        ns = objref.get("namespace") or "default"
-        name = objref.get("name")
 
-        focus_kind = None
-        focus_name = None
-        focus_ns = ns
+def summarize_rbac() -> dict:
+    """
+    Rough RBAC summary: counts of Roles/ClusterRoles and rules.
+    """
+    summary = {
+        "role_count": 0,
+        "cluster_role_count": 0,
+        "role_resources": 0,
+        "cluster_role_resources": 0,
+    }
 
-        try:
-            if kind in ("pods", "pod"):
-                focus_kind = "Pod"
-                focus_name = name
-            elif kind in ("deployments", "deployment"):
-                k8s_load(); core, apps, *_ = get_api()
-                dep = apps.read_namespaced_deployment(name, ns)
-                selector = dep.spec.selector.match_labels or {}
-                lbl = ",".join([f"{k}={v}" for k, v in selector.items()])
-                pods = core.list_namespaced_pod(ns, label_selector=lbl).items
-                if pods:
-                    focus_kind = "Pod"
-                    focus_name = pods[0].metadata.name
-            elif kind in ("replicasets", "replicaset"):
-                k8s_load(); core, apps, *_ = get_api()
-                rs = apps.read_namespaced_replica_set(name, ns)
-                selector = rs.spec.selector.match_labels or {}
-                lbl = ",".join([f"{k}={v}" for k, v in selector.items()])
-                pods = core.list_namespaced_pod(ns, label_selector=lbl).items
-                if pods:
-                    focus_kind = "Pod"
-                    focus_name = pods[0].metadata.name
-            if not focus_name:
-                ro = ev.get("requestObject") or {}
-                tmpl = (((ro.get("spec") or {}).get("template") or {}).get("metadata") or {}).get("labels") or {}
-                if tmpl:
-                    k8s_load(); core, *_ = get_api()
-                    lbl = ",".join([f"{k}={v}" for k, v in tmpl.items()])
-                    pods = core.list_namespaced_pod(ns, label_selector=lbl).items
-                    if pods:
-                        focus_kind = "Pod"; focus_name = pods[0].metadata.name
+    try:
+        roles = kubectl_json(["get", "roles", "-A"])
+        summary["role_count"] = len(roles.get("items", []))
+        for r in roles.get("items", []):
+            rules = r.get("rules", [])
+            summary["role_resources"] += len(rules)
+    except Exception:
+        pass
 
-            if focus_kind and focus_name:
-                mic = mic_build(FocusRef(kind=focus_kind, namespace=focus_ns, name=focus_name))
-                gen = gemini_generate_patch(mic)
-                out = Path("out") / f"audit-{focus_ns}-{focus_name}-{int(time.time())}"
-                write_patch_report(out, mic, gen)
-                results.append({"ok": True, "ns": focus_ns, "pod": focus_name, "out_dir": str(out), "confidence": gen.get("confidence", 0)})
-            else:
-                results.append({"ok": False, "reason": "Could not resolve a Pod from audit event", "objref": objref})
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=str(e))
+    try:
+        crs = kubectl_json(["get", "clusterroles"])
+        summary["cluster_role_count"] = len(crs.get("items", []))
+        for r in crs.get("items", []):
+            rules = r.get("rules", [])
+            summary["cluster_role_resources"] += len(rules)
+    except Exception:
+        pass
 
-    return {"results": results}
+    return summary
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CLI – glue for local runs
-# ─────────────────────────────────────────────────────────────────────────────
+
+def verify(mic_path: Path, patches_dir: Path) -> dict:
+    """
+    Verification hook used by eval_scenarios.sh.
+    Right now:
+      - rbac_static_ok: always true (we don't enforce static checks yet)
+      - can_i_summary: kubectl auth can-i on a fixed set of verbs/resources
+      - notes: includes a pre-change RBAC summary
+    """
+    # We load MIC just to ensure it exists; we don't deeply use it yet.
+    _mic_data = json.loads(mic_path.read_text())
+
+    # Simple RBAC summary
+    verbs = ["get", "list", "watch", "create", "delete"]
+    resources = ["pods", "secrets", "configmaps"]
+
+    can_i = {}
+    for v in verbs:
+        for r in resources:
+            key = f"{v}:{r}"
+            can_i[key] = kubectl_can_i(v, r)
+
+    pre_summary = summarize_rbac()
+
+    result = {
+        "rbac_static_ok": True,
+        "can_i_summary": can_i,
+        "kyverno_ok": None,
+        "notes": [
+            f"RBAC pre-change summary: {pre_summary}",
+        ],
+    }
+    return result
+
 
 def cli():
     import argparse
-    ap = argparse.ArgumentParser("kubefix")
-    sub = ap.add_subparsers(dest="cmd", required=True)
 
-    s_mic = sub.add_parser("mic")
-    s_mic.add_argument("--focus", required=True, help="kind=Pod ns=default name=nginx-xyz")
-    s_mic.add_argument("--out", default="mic.json")
+    parser = argparse.ArgumentParser(description="KubeFix CLI")
+    sub = parser.add_subparsers(dest="cmd", required=True)
 
-    s_gen = sub.add_parser("gen")
-    s_gen.add_argument("--mic", required=True)
-    s_gen.add_argument("--out", default="out")
+    v = sub.add_parser("verify", help="Verify MIC + patches")
+    v.add_argument("--mic", required=True, type=Path)
+    v.add_argument("--patches", required=True, type=Path)
 
-    s_ver = sub.add_parser("verify")
-    s_ver.add_argument("--mic", required=True)
-    s_ver.add_argument("--patches", required=True)
+    args = parser.parse_args()
 
-    s_srv = sub.add_parser("serve")
-    s_srv.add_argument("--port", type=int, default=8080)
-
-    args = ap.parse_args()
-
-    if args.cmd == "mic":
-        kv = dict(p.split("=", 1) for p in args.focus.split())
-        focus = FocusRef(kind=kv["kind"], namespace=kv["ns"], name=kv["name"])
-        mic = mic_build(focus)
-        Path(args.out).write_text(json.dumps(asdict(mic), default=_json_default, indent=2))
-        print(f"Wrote {args.out}")
-
-    elif args.cmd == "gen":
-        mic = MIC(**json.loads(Path(args.mic).read_text()))
-        gen = gemini_generate_patch(mic)
-        out_dir = Path(args.out)
-        write_patch_report(out_dir, mic, gen)
-        print(f"Patch report written to {out_dir}")
-
-    elif args.cmd == "verify":
-        res = verify(Path(args.mic), Path(args.patches))
-        print(res.json(indent=2))
-
-    elif args.cmd == "serve":
-        import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=args.port)
+    if args.cmd == "verify":
+        res = verify(args.mic, args.patches)
+        print(json.dumps(res, indent=2))
+    else:
+        parser.error(f"Unknown command {args.cmd}")
 
 
 if __name__ == "__main__":

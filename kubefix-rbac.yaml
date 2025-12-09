@@ -1,0 +1,51 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubefix-reader
+rules:
+  # Core objects: pods, services, endpoints, serviceaccounts, namespaces
+  - apiGroups: [""]
+    resources:
+      - pods
+      - services
+      - endpoints
+      - serviceaccounts
+      - namespaces
+    verbs: ["get", "list", "watch"]
+
+  # Workload owners: deployments, replicasets, statefulsets
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs: ["get", "list", "watch"]
+
+  # RBAC objects: roles, bindings, cluster roles
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+      - roles
+      - rolebindings
+      - clusterroles
+      - clusterrolebindings
+    verbs: ["get", "list", "watch"]
+
+  # Network policies
+  - apiGroups: ["networking.k8s.io"]
+    resources:
+      - networkpolicies
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubefix-reader-binding
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: kubefix
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubefix-reader
+

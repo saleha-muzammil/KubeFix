@@ -1,0 +1,8 @@
+scenario,model,trial,elapsed_sec,rbac_patch,netpol_patch,podsec_patch,confidence,prompt_tokens,completion_tokens,total_tokens,input_cost_usd,output_cost_usd,total_cost_usd
+PODSEC_ONLY,gemini-2.0-flash,4,4,false,false,true,0.9,64,171,235,0.00002240,0.00017955,0.00020195
+PODSEC_ONLY,gemini-2.0-flash,5,2,false,false,true,0.9,64,205,269,0.00002240,0.00021525,0.00023765
+PODSEC_ONLY,gemini-2.0-flash,6,3,false,false,true,0.9,64,198,262,0.00002240,0.00020790,0.00023030
+PODSEC_ONLY,gemini-2.0-flash,7,3,false,false,true,0.9,64,205,269,0.00002240,0.00021525,0.00023765
+PODSEC_ONLY,gemini-2.0-flash,8,3,false,false,true,0.9,64,205,269,0.00002240,0.00021525,0.00023765
+PODSEC_ONLY,gemini-2.0-flash,9,3,false,false,true,0.9,64,171,235,0.00002240,0.00017955,0.00020195
+PODSEC_ONLY,gemini-2.0-flash,10,2,false,false,true,0.9,64,172,236,0.00002240,0.00018060,0.00020300

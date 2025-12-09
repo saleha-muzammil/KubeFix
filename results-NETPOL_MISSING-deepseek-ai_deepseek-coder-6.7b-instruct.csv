@@ -1,0 +1,1 @@
+scenario,model,trial,elapsed_sec,rbac_patch,netpol_patch,podsec_patch,confidence,prompt_tokens,completion_tokens,total_tokens,input_cost_usd,output_cost_usd,total_cost_usd

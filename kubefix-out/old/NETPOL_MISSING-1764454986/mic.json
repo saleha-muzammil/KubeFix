@@ -1,0 +1,685 @@
+{
+  "focus": {
+    "kind": "Pod",
+    "namespace": "payments",
+    "name": "payments-api-778b99cbdd-7rt7c"
+  },
+  "owners": [
+    {
+      "kind": "Pod",
+      "ns": "payments",
+      "name": "payments-api-778b99cbdd-7rt7c"
+    },
+    {
+      "kind": "ReplicaSet",
+      "ns": "payments",
+      "name": "payments-api-778b99cbdd"
+    }
+  ],
+  "rbac": {
+    "serviceAccount": {
+      "api_version": "v1",
+      "automount_service_account_token": null,
+      "image_pull_secrets": null,
+      "kind": "ServiceAccount",
+      "metadata": {
+        "annotations": null,
+        "creation_timestamp": "2025-11-29T00:27:54+00:00",
+        "deletion_grace_period_seconds": null,
+        "deletion_timestamp": null,
+        "finalizers": null,
+        "generate_name": null,
+        "generation": null,
+        "labels": null,
+        "managed_fields": null,
+        "name": "default",
+        "namespace": "payments",
+        "owner_references": null,
+        "resource_version": "6527",
+        "self_link": null,
+        "uid": "9c5bc014-762a-4ba8-b7bc-7fdc7cc91f26"
+      },
+      "secrets": null
+    },
+    "roleBindings": [],
+    "roles": [],
+    "clusterRoleBindings": [],
+    "clusterRoles": []
+  },
+  "network": {
+    "services": [
+      {
+        "api_version": null,
+        "kind": null,
+        "metadata": {
+          "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"name\":\"payments-api\",\"namespace\":\"payments\"},\"spec\":{\"ports\":[{\"port\":80,\"targetPort\":80}],\"selector\":{\"app\":\"payments-api\"}}}\n"
+          },
+          "creation_timestamp": "2025-11-29T00:27:54+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": null,
+          "generation": null,
+          "labels": null,
+          "managed_fields": [
+            {
+              "api_version": "v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:annotations": {
+                    ".": {},
+                    "f:kubectl.kubernetes.io/last-applied-configuration": {}
+                  }
+                },
+                "f:spec": {
+                  "f:internalTrafficPolicy": {},
+                  "f:ports": {
+                    ".": {},
+                    "k:{\"port\":80,\"protocol\":\"TCP\"}": {
+                      ".": {},
+                      "f:port": {},
+                      "f:protocol": {},
+                      "f:targetPort": {}
+                    }
+                  },
+                  "f:selector": {},
+                  "f:sessionAffinity": {},
+                  "f:type": {}
+                }
+              },
+              "manager": "kubectl-client-side-apply",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-11-29T00:27:54+00:00"
+            }
+          ],
+          "name": "payments-api",
+          "namespace": "payments",
+          "owner_references": null,
+          "resource_version": "6538",
+          "self_link": null,
+          "uid": "cbe2bb90-5355-48ee-a074-0a656da2cea7"
+        },
+        "spec": {
+          "allocate_load_balancer_node_ports": null,
+          "cluster_ip": "10.96.58.35",
+          "cluster_i_ps": [
+            "10.96.58.35"
+          ],
+          "external_i_ps": null,
+          "external_name": null,
+          "external_traffic_policy": null,
+          "health_check_node_port": null,
+          "internal_traffic_policy": "Cluster",
+          "ip_families": [
+            "IPv4"
+          ],
+          "ip_family_policy": "SingleStack",
+          "load_balancer_class": null,
+          "load_balancer_ip": null,
+          "load_balancer_source_ranges": null,
+          "ports": [
+            {
+              "app_protocol": null,
+              "name": null,
+              "node_port": null,
+              "port": 80,
+              "protocol": "TCP",
+              "target_port": 80
+            }
+          ],
+          "publish_not_ready_addresses": null,
+          "selector": {
+            "app": "payments-api"
+          },
+          "session_affinity": "None",
+          "session_affinity_config": null,
+          "traffic_distribution": null,
+          "type": "ClusterIP"
+        },
+        "status": {
+          "conditions": null,
+          "load_balancer": {
+            "ingress": null
+          }
+        }
+      }
+    ],
+    "endpoints": [
+      {
+        "api_version": "v1",
+        "kind": "Endpoints",
+        "metadata": {
+          "annotations": {
+            "endpoints.kubernetes.io/last-change-trigger-time": "2025-11-29T00:27:55Z"
+          },
+          "creation_timestamp": "2025-11-29T00:27:54+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": null,
+          "generation": null,
+          "labels": null,
+          "managed_fields": [
+            {
+              "api_version": "v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:annotations": {
+                    ".": {},
+                    "f:endpoints.kubernetes.io/last-change-trigger-time": {}
+                  }
+                },
+                "f:subsets": {}
+              },
+              "manager": "kube-controller-manager",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-11-29T00:27:55+00:00"
+            }
+          ],
+          "name": "payments-api",
+          "namespace": "payments",
+          "owner_references": null,
+          "resource_version": "6566",
+          "self_link": null,
+          "uid": "e9d46c1e-ce5e-4648-b6b2-c76184a475d5"
+        },
+        "subsets": [
+          {
+            "addresses": [
+              {
+                "hostname": null,
+                "ip": "10.244.0.11",
+                "node_name": "kubefix-control-plane",
+                "target_ref": {
+                  "api_version": null,
+                  "field_path": null,
+                  "kind": "Pod",
+                  "name": "payments-api-778b99cbdd-7rt7c",
+                  "namespace": "payments",
+                  "resource_version": null,
+                  "uid": "d05af005-4f8d-4410-a475-bc1bc7e4b562"
+                }
+              }
+            ],
+            "not_ready_addresses": null,
+            "ports": [
+              {
+                "app_protocol": null,
+                "name": null,
+                "port": 80,
+                "protocol": "TCP"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "networkPolicies": []
+  },
+  "specs": {
+    "pods": [
+      {
+        "api_version": "v1",
+        "kind": "Pod",
+        "metadata": {
+          "annotations": null,
+          "creation_timestamp": "2025-11-29T00:27:54+00:00",
+          "deletion_grace_period_seconds": null,
+          "deletion_timestamp": null,
+          "finalizers": null,
+          "generate_name": "payments-api-778b99cbdd-",
+          "generation": null,
+          "labels": {
+            "app": "payments-api",
+            "pod-template-hash": "778b99cbdd"
+          },
+          "managed_fields": [
+            {
+              "api_version": "v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:metadata": {
+                  "f:generateName": {},
+                  "f:labels": {
+                    ".": {},
+                    "f:app": {},
+                    "f:pod-template-hash": {}
+                  },
+                  "f:ownerReferences": {
+                    ".": {},
+                    "k:{\"uid\":\"e328a7c1-7513-40e0-8bbf-caa312d18bfa\"}": {}
+                  }
+                },
+                "f:spec": {
+                  "f:containers": {
+                    "k:{\"name\":\"payments-api\"}": {
+                      ".": {},
+                      "f:image": {},
+                      "f:imagePullPolicy": {},
+                      "f:name": {},
+                      "f:ports": {
+                        ".": {},
+                        "k:{\"containerPort\":80,\"protocol\":\"TCP\"}": {
+                          ".": {},
+                          "f:containerPort": {},
+                          "f:protocol": {}
+                        }
+                      },
+                      "f:resources": {},
+                      "f:terminationMessagePath": {},
+                      "f:terminationMessagePolicy": {}
+                    }
+                  },
+                  "f:dnsPolicy": {},
+                  "f:enableServiceLinks": {},
+                  "f:restartPolicy": {},
+                  "f:schedulerName": {},
+                  "f:securityContext": {},
+                  "f:terminationGracePeriodSeconds": {}
+                }
+              },
+              "manager": "kube-controller-manager",
+              "operation": "Update",
+              "subresource": null,
+              "time": "2025-11-29T00:27:54+00:00"
+            },
+            {
+              "api_version": "v1",
+              "fields_type": "FieldsV1",
+              "fields_v1": {
+                "f:status": {
+                  "f:conditions": {
+                    "k:{\"type\":\"ContainersReady\"}": {
+                      ".": {},
+                      "f:lastProbeTime": {},
+                      "f:lastTransitionTime": {},
+                      "f:status": {},
+                      "f:type": {}
+                    },
+                    "k:{\"type\":\"Initialized\"}": {
+                      ".": {},
+                      "f:lastProbeTime": {},
+                      "f:lastTransitionTime": {},
+                      "f:status": {},
+                      "f:type": {}
+                    },
+                    "k:{\"type\":\"PodReadyToStartContainers\"}": {
+                      ".": {},
+                      "f:lastProbeTime": {},
+                      "f:lastTransitionTime": {},
+                      "f:status": {},
+                      "f:type": {}
+                    },
+                    "k:{\"type\":\"Ready\"}": {
+                      ".": {},
+                      "f:lastProbeTime": {},
+                      "f:lastTransitionTime": {},
+                      "f:status": {},
+                      "f:type": {}
+                    }
+                  },
+                  "f:containerStatuses": {},
+                  "f:hostIP": {},
+                  "f:hostIPs": {},
+                  "f:phase": {},
+                  "f:podIP": {},
+                  "f:podIPs": {
+                    ".": {},
+                    "k:{\"ip\":\"10.244.0.11\"}": {
+                      ".": {},
+                      "f:ip": {}
+                    }
+                  },
+                  "f:startTime": {}
+                }
+              },
+              "manager": "kubelet",
+              "operation": "Update",
+              "subresource": "status",
+              "time": "2025-11-29T00:27:55+00:00"
+            }
+          ],
+          "name": "payments-api-778b99cbdd-7rt7c",
+          "namespace": "payments",
+          "owner_references": [
+            {
+              "api_version": "apps/v1",
+              "block_owner_deletion": true,
+              "controller": true,
+              "kind": "ReplicaSet",
+              "name": "payments-api-778b99cbdd",
+              "uid": "e328a7c1-7513-40e0-8bbf-caa312d18bfa"
+            }
+          ],
+          "resource_version": "6565",
+          "self_link": null,
+          "uid": "d05af005-4f8d-4410-a475-bc1bc7e4b562"
+        },
+        "spec": {
+          "active_deadline_seconds": null,
+          "affinity": null,
+          "automount_service_account_token": null,
+          "containers": [
+            {
+              "args": null,
+              "command": null,
+              "env": null,
+              "env_from": null,
+              "image": "ealen/echo-server:latest",
+              "image_pull_policy": "Always",
+              "lifecycle": null,
+              "liveness_probe": null,
+              "name": "payments-api",
+              "ports": [
+                {
+                  "container_port": 80,
+                  "host_ip": null,
+                  "host_port": null,
+                  "name": null,
+                  "protocol": "TCP"
+                }
+              ],
+              "readiness_probe": null,
+              "resize_policy": null,
+              "resources": {
+                "claims": null,
+                "limits": null,
+                "requests": null
+              },
+              "restart_policy": null,
+              "restart_policy_rules": null,
+              "security_context": null,
+              "startup_probe": null,
+              "stdin": null,
+              "stdin_once": null,
+              "termination_message_path": "/dev/termination-log",
+              "termination_message_policy": "File",
+              "tty": null,
+              "volume_devices": null,
+              "volume_mounts": [
+                {
+                  "mount_path": "/var/run/secrets/kubernetes.io/serviceaccount",
+                  "mount_propagation": null,
+                  "name": "kube-api-access-k8tnv",
+                  "read_only": true,
+                  "recursive_read_only": null,
+                  "sub_path": null,
+                  "sub_path_expr": null
+                }
+              ],
+              "working_dir": null
+            }
+          ],
+          "dns_config": null,
+          "dns_policy": "ClusterFirst",
+          "enable_service_links": true,
+          "ephemeral_containers": null,
+          "host_aliases": null,
+          "host_ipc": null,
+          "host_network": null,
+          "host_pid": null,
+          "host_users": null,
+          "hostname": null,
+          "hostname_override": null,
+          "image_pull_secrets": null,
+          "init_containers": null,
+          "node_name": "kubefix-control-plane",
+          "node_selector": null,
+          "os": null,
+          "overhead": null,
+          "preemption_policy": "PreemptLowerPriority",
+          "priority": 0,
+          "priority_class_name": null,
+          "readiness_gates": null,
+          "resource_claims": null,
+          "resources": null,
+          "restart_policy": "Always",
+          "runtime_class_name": null,
+          "scheduler_name": "default-scheduler",
+          "scheduling_gates": null,
+          "security_context": {
+            "app_armor_profile": null,
+            "fs_group": null,
+            "fs_group_change_policy": null,
+            "run_as_group": null,
+            "run_as_non_root": null,
+            "run_as_user": null,
+            "se_linux_change_policy": null,
+            "se_linux_options": null,
+            "seccomp_profile": null,
+            "supplemental_groups": null,
+            "supplemental_groups_policy": null,
+            "sysctls": null,
+            "windows_options": null
+          },
+          "service_account": "default",
+          "service_account_name": "default",
+          "set_hostname_as_fqdn": null,
+          "share_process_namespace": null,
+          "subdomain": null,
+          "termination_grace_period_seconds": 30,
+          "tolerations": [
+            {
+              "effect": "NoExecute",
+              "key": "node.kubernetes.io/not-ready",
+              "operator": "Exists",
+              "toleration_seconds": 300,
+              "value": null
+            },
+            {
+              "effect": "NoExecute",
+              "key": "node.kubernetes.io/unreachable",
+              "operator": "Exists",
+              "toleration_seconds": 300,
+              "value": null
+            }
+          ],
+          "topology_spread_constraints": null,
+          "volumes": [
+            {
+              "aws_elastic_block_store": null,
+              "azure_disk": null,
+              "azure_file": null,
+              "cephfs": null,
+              "cinder": null,
+              "config_map": null,
+              "csi": null,
+              "downward_api": null,
+              "empty_dir": null,
+              "ephemeral": null,
+              "fc": null,
+              "flex_volume": null,
+              "flocker": null,
+              "gce_persistent_disk": null,
+              "git_repo": null,
+              "glusterfs": null,
+              "host_path": null,
+              "image": null,
+              "iscsi": null,
+              "name": "kube-api-access-k8tnv",
+              "nfs": null,
+              "persistent_volume_claim": null,
+              "photon_persistent_disk": null,
+              "portworx_volume": null,
+              "projected": {
+                "default_mode": 420,
+                "sources": [
+                  {
+                    "cluster_trust_bundle": null,
+                    "config_map": null,
+                    "downward_api": null,
+                    "pod_certificate": null,
+                    "secret": null,
+                    "service_account_token": {
+                      "audience": null,
+                      "expiration_seconds": 3607,
+                      "path": "token"
+                    }
+                  },
+                  {
+                    "cluster_trust_bundle": null,
+                    "config_map": {
+                      "items": [
+                        {
+                          "key": "ca.crt",
+                          "mode": null,
+                          "path": "ca.crt"
+                        }
+                      ],
+                      "name": "kube-root-ca.crt",
+                      "optional": null
+                    },
+                    "downward_api": null,
+                    "pod_certificate": null,
+                    "secret": null,
+                    "service_account_token": null
+                  },
+                  {
+                    "cluster_trust_bundle": null,
+                    "config_map": null,
+                    "downward_api": {
+                      "items": [
+                        {
+                          "field_ref": {
+                            "api_version": "v1",
+                            "field_path": "metadata.namespace"
+                          },
+                          "mode": null,
+                          "path": "namespace",
+                          "resource_field_ref": null
+                        }
+                      ]
+                    },
+                    "pod_certificate": null,
+                    "secret": null,
+                    "service_account_token": null
+                  }
+                ]
+              },
+              "quobyte": null,
+              "rbd": null,
+              "scale_io": null,
+              "secret": null,
+              "storageos": null,
+              "vsphere_volume": null
+            }
+          ]
+        },
+        "status": {
+          "conditions": [
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-11-29T00:27:55+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "PodReadyToStartContainers"
+            },
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-11-29T00:27:54+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "Initialized"
+            },
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-11-29T00:27:55+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "Ready"
+            },
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-11-29T00:27:55+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "ContainersReady"
+            },
+            {
+              "last_probe_time": null,
+              "last_transition_time": "2025-11-29T00:27:54+00:00",
+              "message": null,
+              "observed_generation": null,
+              "reason": null,
+              "status": "True",
+              "type": "PodScheduled"
+            }
+          ],
+          "container_statuses": [
+            {
+              "allocated_resources": null,
+              "allocated_resources_status": null,
+              "container_id": "containerd://bdd1311b26e39ba500b10e4da8f240b7a0604ae6e596eed1b3797ee9a4e7f783",
+              "image": "docker.io/ealen/echo-server:latest",
+              "image_id": "docker.io/ealen/echo-server@sha256:ec8a6e95890df937a1eb5fafca033a32172d4f43c1fea1f302931d5f230a137f",
+              "last_state": {
+                "running": null,
+                "terminated": null,
+                "waiting": null
+              },
+              "name": "payments-api",
+              "ready": true,
+              "resources": null,
+              "restart_count": 0,
+              "started": true,
+              "state": {
+                "running": {
+                  "started_at": "2025-11-29T00:27:54+00:00"
+                },
+                "terminated": null,
+                "waiting": null
+              },
+              "stop_signal": null,
+              "user": null,
+              "volume_mounts": [
+                {
+                  "mount_path": "/var/run/secrets/kubernetes.io/serviceaccount",
+                  "name": "kube-api-access-k8tnv",
+                  "read_only": true,
+                  "recursive_read_only": "Disabled"
+                }
+              ]
+            }
+          ],
+          "ephemeral_container_statuses": null,
+          "extended_resource_claim_status": null,
+          "host_ip": "172.18.0.3",
+          "host_i_ps": [
+            {
+              "ip": "172.18.0.3"
+            }
+          ],
+          "init_container_statuses": null,
+          "message": null,
+          "nominated_node_name": null,
+          "observed_generation": null,
+          "phase": "Running",
+          "pod_ip": "10.244.0.11",
+          "pod_i_ps": [
+            {
+              "ip": "10.244.0.11"
+            }
+          ],
+          "qos_class": "BestEffort",
+          "reason": null,
+          "resize": null,
+          "resource_claim_statuses": null,
+          "start_time": "2025-11-29T00:27:54+00:00"
+        }
+      }
+    ]
+  }
+}

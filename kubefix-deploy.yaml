@@ -10,7 +10,7 @@ metadata:
   namespace: kubefix
 type: Opaque
 stringData:
-  GEMINI_API_KEY: "<PUT_YOUR_GEMINI_API_KEY_HERE>"
+  GEMINI_API_KEY: "AIzaSyBr2hv1GtuIjzedzWhqlweaRDjrPI1rwrU"
 ---
 apiVersion: apps/v1
 kind: Deployment

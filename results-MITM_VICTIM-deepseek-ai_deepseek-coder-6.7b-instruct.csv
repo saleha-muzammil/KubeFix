@@ -1,0 +1,11 @@
+scenario,model,trial,elapsed_sec,rbac_patch,netpol_patch,podsec_patch,confidence,prompt_tokens,completion_tokens,total_tokens,input_cost_usd,output_cost_usd,total_cost_usd
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,1,3,false,false,true,0.9,64,167,231,0.00000896,0.00002338,0.00003234
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,2,3,false,false,true,0.9,64,127,191,0.00000896,0.00001778,0.00002674
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,3,2,false,false,true,0.9,64,136,200,0.00000896,0.00001904,0.00002800
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,4,2,false,false,true,0.9,64,135,199,0.00000896,0.00001890,0.00002786
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,5,2,false,false,true,0.9,64,158,222,0.00000896,0.00002212,0.00003108
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,6,2,false,false,true,0.9,64,133,197,0.00000896,0.00001862,0.00002758
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,7,2,false,false,true,0.9,64,136,200,0.00000896,0.00001904,0.00002800
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,8,2,false,false,true,0.9,64,140,204,0.00000896,0.00001960,0.00002856
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,9,2,false,false,true,0.9,64,140,204,0.00000896,0.00001960,0.00002856
+MITM_VICTIM,deepseek-ai/deepseek-coder-6.7b-instruct,10,2,false,false,true,0.9,64,136,200,0.00000896,0.00001904,0.00002800
